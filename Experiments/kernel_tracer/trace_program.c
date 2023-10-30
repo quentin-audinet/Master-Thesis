@@ -9,6 +9,7 @@
 #include <sys/ptrace.h>
 
 #define tracing "/sys/kernel/tracing/"
+#define DO_TRACE
 
 uid_t euid, ruid, suid;
 
@@ -101,8 +102,10 @@ int run_traced_program(char* path) {
         
         waitpid(child_pid, NULL, 0);
         
-        //if (set_tracing_pid(child_pid) == -1) return -1;
-        //if (set_tracing_status(1) == -1) return -1;
+        #ifdef DO_TRACE
+        if (set_tracing_pid(child_pid) == -1) return -1;
+        if (set_tracing_status(1) == -1) return -1;
+        #endif
 
         // Resume child process
         ptrace(PTRACE_CONT, child_pid, NULL, NULL);
@@ -110,7 +113,9 @@ int run_traced_program(char* path) {
         waitpid(child_pid, &status, 0);
         printf("Finish %d\n", status);
 
-        //if (set_tracing_status(0) == -1) return -1;
+        #ifdef DO_TRACE
+        if (set_tracing_status(0) == -1) return -1;
+        #endif
     }
 
     return 0;
@@ -159,17 +164,19 @@ int main(int argc, char* argv[]) {
     getresuid(&ruid, &euid, &suid);
     setreuid(geteuid(), getuid());
     
-    //if (set_tracing_status(0) == -1) return -1;
+    #ifdef DO_TRACE
+    if (set_tracing_status(0) == -1) return -1;
 
     // Reset log
-    //if (set_current_tracer("nop") == -1) return -1;
-    //if (set_current_tracer("function") == -1) return -1;
+    if (set_current_tracer("nop") == -1) return -1;
+    if (set_current_tracer("function") == -1) return -1;
+    #endif
     
     if (run_traced_program(argv[1]) == -1) return -1;
 
-    // save_trace(output);
+    #ifdef DO_TRACE
+    save_trace(output);
+    #endif
 
-
-    
     return 0;
 }

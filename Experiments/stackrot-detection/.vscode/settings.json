@@ -1,0 +1,9 @@
+{
+  "rust-analyzer.linkedProjects": [
+    "Cargo.toml",
+    "stackrot-detection-ebpf/Cargo.toml"
+  ],
+  "files.associations": {
+    "ptrace.h": "c"
+  }
+}

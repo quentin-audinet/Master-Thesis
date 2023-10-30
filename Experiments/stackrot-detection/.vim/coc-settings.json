@@ -1,0 +1,3 @@
+{
+  "rust-analyzer.linkedProjects": ["Cargo.toml", "stackrot-detection-ebpf/Cargo.toml"]
+}
