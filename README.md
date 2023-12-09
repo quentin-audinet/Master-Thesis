@@ -38,7 +38,6 @@ async fn main() -> Result<(), anyhow::Error> {
     // Required to log message to the console
     env_logger::init();
 
-
     // Load the eBPF program at compile time
     #[cfg(debug_assertions)]
     let mut bpf = Bpf::load(include_bytes_aligned!(

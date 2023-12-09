@@ -1,7 +1,6 @@
 #![no_std]
 #![no_main]
 
-use core::slice;
 use aya_bpf::{macros::kprobe, programs::ProbeContext, helpers::{bpf_probe_read_kernel, bpf_get_current_comm, bpf_get_current_task_btf}};
 use aya_log_ebpf::info;
 
@@ -26,8 +25,8 @@ fn try_kprobe_hook(ctx: ProbeContext) -> Result<u32, u32> {
     let btf_task: *mut aya_bpf::bindings::task_struct = unsafe { bpf_get_current_task_btf() };
     let current_task: *mut task_struct = unsafe { core::mem::transmute(btf_task as *mut task_struct) };
 
-    let comm_slice = unsafe { slice::from_raw_parts(((*current_task).comm).as_ptr() as *const u8, ((*current_task).comm).len()) };
-    let command = unsafe { core::str::from_utf8_unchecked(&comm_slice) };
+    let comm_slice = unsafe { (&(*current_task).comm) as *const [i8] as *const [u8] };
+    let command = unsafe { core::str::from_utf8_unchecked(&*comm_slice) };
 
     // Get the PID from the task_struct
     let pid = unsafe { (*current_task).pid };

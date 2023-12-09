@@ -47,18 +47,9 @@ async fn main() -> Result<(), anyhow::Error> {
         program.attach(&f, 0)?;
     }
  
-    let mut l1 = LinkedList::new(5);
-    let l = &l1.clone();
+    let l1 = LinkedList::new(Node::new(5));
 
-    l1.append(&mut LinkedList::new(8));
-    l1 = unsafe { *l1.next };
-    info!("********************** l1: {}", l1.data);
-
-    l1.append(&mut LinkedList::new(45));
-    l1 = unsafe { *l1.next };
-
-    info!("********************** l1: {}", l1.data);
-    info!("********************** l: {}", l.data);
+    info!("********************** l1: {}", l1.get_current_data());
 
     info!("Waiting for Ctrl-C...");
     signal::ctrl_c().await?;
