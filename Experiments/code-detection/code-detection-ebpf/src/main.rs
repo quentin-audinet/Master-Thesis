@@ -8,6 +8,26 @@ mod vmlinux;
 use vmlinux::sk_buff;
 
 #[kprobe]
+pub fn code_detection_xt_compat_target_from_user(ctx: ProbeContext) -> u32 {
+    match try_code_detection_xt_compat_target_from_user(ctx) {
+        Ok(ret) => ret,
+        Err(ret) => ret,
+    }
+}
+
+fn try_code_detection_xt_compat_target_from_user(ctx: ProbeContext) -> Result<u32, u32> {
+
+    let addr = unsafe { (*ctx.regs).rip };
+    info!(&ctx, "function xt_compat_target_from_user called (0x{:x})", addr);
+    Ok(0)
+}
+
+
+/*
+Probes on tcp functions to check everything is ok
+*/
+
+#[kprobe]
 pub fn code_detection_tcp_connect(ctx: ProbeContext) -> u32 {
     match try_code_detection_tcp_connect(ctx) {
         Ok(ret) => ret,
@@ -15,8 +35,9 @@ pub fn code_detection_tcp_connect(ctx: ProbeContext) -> u32 {
     }
 }
 
-fn try_code_detection_tcp_connect(ctx: ProbeContext) -> Result<u32, u32> {
 
+fn try_code_detection_tcp_connect(ctx: ProbeContext) -> Result<u32, u32> {
+    
     let addr = unsafe { (*ctx.regs).rip };
     info!(&ctx, "function tcp_connect called (0x{:x})", addr);
     Ok(0)

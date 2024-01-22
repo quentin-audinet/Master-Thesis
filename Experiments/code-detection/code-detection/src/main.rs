@@ -37,7 +37,7 @@ async fn main() -> Result<(), anyhow::Error> {
         warn!("failed to initialize eBPF logger: {}", e);
     }
 
-    let function_list = ["tcp_connect", "tcp_v4_rcv"];
+    let function_list = ["xt_compat_target_from_user", "tcp_connect", "tcp_v4_rcv"];
 
     for f in function_list {
         let mut bpf_fun = "code_detection_".to_owned();
