@@ -44,7 +44,7 @@ fn try_code_detection_xt_compat_target_from_user(ctx: ProbeContext) -> Result<u3
     let size = target.targetsize;
     // let u8_slice: *const [u8] = unsafe { &name as *const [i8] as *const [u8] };
     // let string: &str = unsafe { core::str::from_utf8_unchecked(&*u8_slice) };
-    info!(&ctx, "TARGETSIZE: {}", t.data);
+    info!(&ctx, "TARGETSIZE: {}", target.targetsize );
 
     Ok(0)
 }
