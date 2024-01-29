@@ -7,6 +7,12 @@ use aya_log_ebpf::info;
 mod vmlinux;
 use vmlinux::sk_buff;
 
+mod xt;
+use xt::xt_entry_target;
+use xt::compat_xt_entry_target;
+
+use crate::xt::xt_target;
+
 #[kprobe]
 pub fn code_detection_xt_compat_target_from_user(ctx: ProbeContext) -> u32 {
     match try_code_detection_xt_compat_target_from_user(ctx) {
@@ -19,6 +25,27 @@ fn try_code_detection_xt_compat_target_from_user(ctx: ProbeContext) -> Result<u3
 
     let addr = unsafe { (*ctx.regs).rip };
     info!(&ctx, "function xt_compat_target_from_user called (0x{:x})", addr);
+
+    let t: *mut xt_entry_target = ctx.arg(0).ok_or(1u32)?;
+    let t = unsafe {
+        bpf_probe_read_kernel(&(*t) as *const xt_entry_target).map_err(|_| 1u32)?
+    };
+
+    let target: *mut xt_target = unsafe { t.u.kernel.target };
+    let target = unsafe {
+        bpf_probe_read_kernel(&(*target) as *const xt_target).map_err(|_| 1u32)?
+    };
+ 
+    //let ct: *mut compat_xt_entry_target = (&t). as *mut compat_xt_entry_target;
+
+
+
+    let name = unsafe { t.u.user.name };
+    let size = target.targetsize;
+    // let u8_slice: *const [u8] = unsafe { &name as *const [i8] as *const [u8] };
+    // let string: &str = unsafe { core::str::from_utf8_unchecked(&*u8_slice) };
+    info!(&ctx, "TARGETSIZE: {}", t.data);
+
     Ok(0)
 }
 
