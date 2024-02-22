@@ -1,7 +1,10 @@
-use aya::programs::{KProbe, self};
+use std::borrow::BorrowMut;
+
+use aya::programs::KProbe;
 use aya::{include_bytes_aligned, Bpf};
 use aya_log::BpfLogger;
-use code_detection_common::{Node, LinkedList};
+use aya::maps::HashMap;
+use code_detection_common::{Calls, Condition, FuncKey, LinkedList, Node};
 use log::{info, warn, debug};
 use tokio::signal;
 
@@ -37,7 +40,7 @@ async fn main() -> Result<(), anyhow::Error> {
         warn!("failed to initialize eBPF logger: {}", e);
     }
 
-    let function_list = ["xt_compat_target_from_user", "tcp_connect", "tcp_v4_rcv"];
+    let function_list = ["xt_compat_target_from_user", "do_msgsnd", "ksys_msgget", "do_msgrcv"];
 
     for f in function_list {
         let mut bpf_fun = "code_detection_".to_owned();
@@ -46,10 +49,35 @@ async fn main() -> Result<(), anyhow::Error> {
         program.load()?;
         program.attach(&f, 0)?;
     }
- 
-    let l1 = LinkedList::new(Node::new(5));
 
-    info!("********************** l1: {}", l1.get_current_data());
+    let test = "test";
+
+    if test != "test" {
+        let program: &mut KProbe = bpf.program_mut("code_detection_test").unwrap().try_into()?;
+        program.load()?;
+        program.attach(test, 0)?;
+    }
+
+    let mut call_list: HashMap<_, [u8;16] , Calls> = HashMap::try_from(bpf.map_mut("CALL_LIST").unwrap())?;
+    let mut exploits: HashMap<_, [u8;32], LinkedList<Condition>> = HashMap::try_from(bpf.map_mut("EXPLOITS").unwrap())?;
+
+
+    let mut CVE_2021_22555 = LinkedList::new(Node::new(Condition {
+        func: "ksys_msgget",
+        num: 2000,
+    }.borrow_mut()));
+    CVE_2021_22555.append(Node::new(Condition{
+        func: "do_msgsnd",
+        num: 4000,
+    }.borrow_mut()));
+
+
+
+
+    exploits.insert(FuncKey::get_key("xt_compat_target_from_user"), &CVE_2021_22555,0)?;
+
+    info!("{} -> Conditions: {}", "xt_compat_target_from_user", exploits.get(&FuncKey::get_key("xt_compat_target_from_user"), 0).unwrap().size);
+
 
     info!("Waiting for Ctrl-C...");
     signal::ctrl_c().await?;
