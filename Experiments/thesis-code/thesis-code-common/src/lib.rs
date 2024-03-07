@@ -5,3 +5,11 @@
     - Conditions
     - Shared Graph
 */
+
+pub struct Condition {
+
+}
+
+pub struct GraphStatus {
+    pub conditions: [Condition],
+}

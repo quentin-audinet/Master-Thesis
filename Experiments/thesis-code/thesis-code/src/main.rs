@@ -39,11 +39,24 @@ async fn main() -> Result<(), anyhow::Error> {
     /*  TODO
         - Load conditions in a shared Graph between ULand and KLand 
         - Create the KProbes for each kernel function to hook
+        - Map : Process -> Graph status
     */
 
     let program: &mut KProbe = bpf.program_mut("thesis_code").unwrap().try_into()?;
     program.load()?;
     program.attach("try_to_wake_up", 0)?;
+
+    /*  TODO
+        - Wait from signal from kernel
+        KL ==> { PID, KFUNC, ARGS } ==> UL
+        OnSignalReceived:
+            1. Get Process from PID
+            2. Check if PID is registered, if not add an entry
+            3. Check if some current condition rely on KFUNC
+            4. Check if the condition is satisfied using ARGS
+            5. Update Graph status and check if a vulnerability has been triggered
+
+    */
 
     info!("Waiting for Ctrl-C...");
     signal::ctrl_c().await?;
