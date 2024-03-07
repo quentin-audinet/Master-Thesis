@@ -35,6 +35,12 @@ async fn main() -> Result<(), anyhow::Error> {
         // This can happen if you remove all log statements from your eBPF program.
         warn!("failed to initialize eBPF logger: {}", e);
     }
+
+    /*  TODO
+        - Load conditions in a shared Graph between ULand and KLand 
+        - Create the KProbes for each kernel function to hook
+    */
+
     let program: &mut KProbe = bpf.program_mut("thesis_code").unwrap().try_into()?;
     program.load()?;
     program.attach("try_to_wake_up", 0)?;
