@@ -58,10 +58,12 @@ async fn main() -> Result<(), anyhow::Error> {
 
     // TODO, fill the Graph
     condition_graph.set(0, &NodeCondition { value: 10}, 0)?;    // fake set
+    condition_graph.set(3, &NodeCondition { value: 20}, 0)?;    // fake set
+
 
     // Create the porcess map
     let mut process_map: HashMap<_, u32, [u8; 16]> = HashMap::try_from(bpf.map_mut("PROCESS_CONDITIONS").unwrap())?;
-    process_map.insert(1234, [5;16], 0)?;   // fake insert
+    process_map.insert(1234, [1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0], 0)?;   // fake insert
     
     /*  TODO
         - Wait from signal from kernel
@@ -91,7 +93,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 let ptr = data.as_ptr() as *const RingData;
                 let ring = unsafe { *ptr };
                 info!("Received data {:?} from {}", ring.args, ring.pid);
-                process_map.insert(1234, [(ring.pid % 100) as u8;16], 0)?;
+                //process_map.insert(1234, [(ring.pid % 100) as u8;16], 0)?;
             },
             None => {}
         };

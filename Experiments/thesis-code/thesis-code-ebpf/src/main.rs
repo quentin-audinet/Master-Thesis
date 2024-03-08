@@ -27,13 +27,48 @@ static mut CONDITION_GRAPH: Array<NodeCondition> = Array::<NodeCondition>::with_
 #[map(name = "PROCESS_CONDITIONS")]
 static mut PROCESS_CONDITION: HashMap<u32, [u8;16]> = HashMap::<u32, [u8; 16]>::with_max_entries(4096, 0);
 
+
+// The global hook
 fn hook(kfunction: &'static str, pid: u32, ctx: &ProbeContext) {
 
-    let graph = unsafe { PROCESS_CONDITION.get(&1234) };
+    let graph = unsafe { PROCESS_CONDITION.get(&1234) };    // key is PID
+    
+    // get the conditions to read
+    let current_conditions =
+    // If a Some result is returned, then the processed is already tracked
     if graph.is_some() {
         let array = graph.unwrap();
         let value = unsafe { bpf_probe_read_kernel(array as *const [u8;16]).map_err(|_e| 1u32).unwrap() };
-        info!(ctx, "MAP: {}", value[0]);
+        value
+    }
+    // Otherwise, we should add a new entry in the map
+    // For now, just grab the primary conditions
+    else {
+        // TODO - Grab primary conditions list
+        [0;16]
+    };
+
+    for i in 0..16u32 {
+        // Current condition
+        if current_conditions[i as usize] == 1 {
+            // Grab the condition
+            let condition = unsafe {
+                bpf_probe_read_kernel(
+                    CONDITION_GRAPH.get(i).unwrap() as *const NodeCondition)
+                            .map_err(|_e|1u32
+                ).unwrap()
+            };
+            info!(ctx, "Condition n°{} is {}", i, condition.value);
+
+            // Check if the kfunction is involved
+            if kfunction == "tcp_connect" { // Get from the condition
+                // TODO - Extract the condition
+                let verified = true;    // TODO - Check the condition
+                if verified {
+                    // TODO - Update the Process Condition in UL
+                }
+            }
+        }
     }
 
     unsafe { RING_BUFFER.output(&RingData {pid, args: [1,2,3]}, 0).unwrap() };
