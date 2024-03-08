@@ -6,12 +6,17 @@
     - Shared Graph
 */
 
-pub struct Condition {
-
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct NodeCondition {
+    pub value: u32,     // Fake value for testing purposes
 }
 
+#[cfg(feature = "user")]
+unsafe impl aya::Pod for NodeCondition {}
+
 pub struct GraphStatus {
-    pub conditions: [Condition],
+    pub conditions: [NodeCondition],
 }
 
 #[repr(C)]

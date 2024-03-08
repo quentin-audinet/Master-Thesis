@@ -1,9 +1,9 @@
-use aya::maps::RingBuf;
+use aya::maps::{Array, HashMap, RingBuf};
 use aya::programs::KProbe;
 use aya::{include_bytes_aligned, Bpf};
 use aya_log::BpfLogger;
 use log::{info, warn, debug};
-use thesis_code_common::RingData;
+use thesis_code_common::{NodeCondition, RingData};
 use tokio::signal;
 
 #[tokio::main]
@@ -33,6 +33,7 @@ async fn main() -> Result<(), anyhow::Error> {
     let mut bpf = Bpf::load(include_bytes_aligned!(
         "../../target/bpfel-unknown-none/release/thesis-code"
     ))?;
+
     if let Err(e) = BpfLogger::init(&mut bpf) {
         // This can happen if you remove all log statements from your eBPF program.
         warn!("failed to initialize eBPF logger: {}", e);
@@ -43,14 +44,25 @@ async fn main() -> Result<(), anyhow::Error> {
         - Create the KProbes for each kernel function to hook
         - Map : Process -> Graph status
     */
-
     
+    // Declare all hooks here
     let program: &mut KProbe = bpf.program_mut("thesis_code").unwrap().try_into()?;
     program.load()?;
     program.attach("tcp_connect", 0)?;
-    let mut ring_buf = RingBuf::try_from(bpf.map_mut("ARRAY").unwrap()).unwrap();
 
+    // Create the ring buffer
+    let mut ring_buf = RingBuf::try_from(bpf.take_map("ARRAY").unwrap())?;
 
+    // Create the Graph of Conditions.
+    let mut condition_graph: Array<_, NodeCondition> = Array::try_from(bpf.take_map("CONDITION_GRAPH").unwrap())?;
+
+    // TODO, fill the Graph
+    condition_graph.set(0, &NodeCondition { value: 10}, 0)?;    // fake set
+
+    // Create the porcess map
+    let mut process_map: HashMap<_, u32, [u8; 16]> = HashMap::try_from(bpf.map_mut("PROCESS_CONDITIONS").unwrap())?;
+    process_map.insert(1234, [5;16], 0)?;   // fake insert
+    
     /*  TODO
         - Wait from signal from kernel
         KL ==> { PID, KFUNC, ARGS } ==> UL
@@ -71,15 +83,19 @@ async fn main() -> Result<(), anyhow::Error> {
         info!("Exiting...");
     });
 
+    // Listen for messages from the kernel
     loop {
         match (ring_buf).next() {
             Some(data) => {
+                // TMP, test communication and array modifications
                 let ptr = data.as_ptr() as *const RingData;
                 let ring = unsafe { *ptr };
                 info!("Received data {:?} from {}", ring.args, ring.pid);
+                process_map.insert(1234, [(ring.pid % 100) as u8;16], 0)?;
             },
             None => {}
         };
+        // Exit when user pressed CTRL+C
         if wait_for_ctrl_c.is_finished() {
             break;
         }
