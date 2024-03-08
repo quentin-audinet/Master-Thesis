@@ -1,8 +1,9 @@
 #![no_std]
 #![no_main]
 
-use aya_bpf::{macros::kprobe, programs::ProbeContext};
+use aya_bpf::{macros::{kprobe, map}, maps::RingBuf, programs::ProbeContext, BpfContext};
 use aya_log_ebpf::info;
+use thesis_code_common::RingData;
 
 /*  TODO
     - Create a KProbe for each function (Try to have a pattern for future auto generation)
@@ -11,6 +12,13 @@ use aya_log_ebpf::info;
     - Get PID, kfunction name and args
     - Send to UL for analysis
 */
+
+#[map(name = "ARRAY")]
+static mut RING_BUFFER:RingBuf = RingBuf::with_byte_size(1024, 0);
+
+fn hook(kfunction: &'static str, pid: u32) {
+    unsafe { RING_BUFFER.output(&RingData {pid, args: [1,2,3]}, 0).unwrap() };
+}
 
 #[kprobe]
 pub fn thesis_code(ctx: ProbeContext) -> u32 {
@@ -21,7 +29,8 @@ pub fn thesis_code(ctx: ProbeContext) -> u32 {
 }
 
 fn try_thesis_code(ctx: ProbeContext) -> Result<u32, u32> {
-    info!(&ctx, "function try_to_wake_up called");
+    hook("tcp_connect", ctx.pid());
+    info!(&ctx, "function tcp_connect called on pid {}", ctx.pid());
     Ok(0)
 }
 

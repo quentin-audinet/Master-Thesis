@@ -1,7 +1,9 @@
+use aya::maps::RingBuf;
 use aya::programs::KProbe;
 use aya::{include_bytes_aligned, Bpf};
 use aya_log::BpfLogger;
 use log::{info, warn, debug};
+use thesis_code_common::RingData;
 use tokio::signal;
 
 #[tokio::main]
@@ -42,9 +44,12 @@ async fn main() -> Result<(), anyhow::Error> {
         - Map : Process -> Graph status
     */
 
+    
     let program: &mut KProbe = bpf.program_mut("thesis_code").unwrap().try_into()?;
     program.load()?;
-    program.attach("try_to_wake_up", 0)?;
+    program.attach("tcp_connect", 0)?;
+    let mut ring_buf = RingBuf::try_from(bpf.map_mut("ARRAY").unwrap()).unwrap();
+
 
     /*  TODO
         - Wait from signal from kernel
@@ -58,9 +63,27 @@ async fn main() -> Result<(), anyhow::Error> {
 
     */
 
-    info!("Waiting for Ctrl-C...");
-    signal::ctrl_c().await?;
-    info!("Exiting...");
+    // When this thread is finished, the program should terminate
+    // Ensure that every infinite loop finish when wait_for_ctrl_c terminates
+    let wait_for_ctrl_c = tokio::spawn(async {
+        info!("Waiting for Ctrl-C...");
+        signal::ctrl_c().await.unwrap();
+        info!("Exiting...");
+    });
 
+    loop {
+        match (ring_buf).next() {
+            Some(data) => {
+                let ptr = data.as_ptr() as *const RingData;
+                let ring = unsafe { *ptr };
+                info!("Received data {:?} from {}", ring.args, ring.pid);
+            },
+            None => {}
+        };
+        if wait_for_ctrl_c.is_finished() {
+            break;
+        }
+    };
     Ok(())
+
 }
