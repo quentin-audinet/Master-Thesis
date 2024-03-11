@@ -1,7 +1,7 @@
 #![no_std]
 #![no_main]
 
-use aya_bpf::{cty::{c_char, c_void}, helpers::{bpf_probe_read_kernel, bpf_probe_read_kernel_str_bytes, gen::bpf_probe_read_kernel_str}, macros::{kprobe, map}, maps::{Array, HashMap, RingBuf}, programs::ProbeContext, BpfContext};
+use aya_bpf::{helpers::bpf_probe_read_kernel, macros::{kprobe, map}, maps::{Array, HashMap, RingBuf}, programs::ProbeContext, BpfContext};
 use aya_log_ebpf::info;
 use thesis_code_common::{ConditionStates, NodeCondition, RingData};
 
@@ -30,6 +30,8 @@ static mut PROCESS_CONDITION: HashMap<u32, [ConditionStates;16]> = HashMap::<u32
 
 // The global hook
 fn hook(kfunction: &'static str, pid: u32, ctx: &ProbeContext) {
+
+    let kfunction = kfunction.to_32bytes();
 
     let graph = unsafe { PROCESS_CONDITION.get(&1234) };    // key is PID
     
@@ -60,11 +62,10 @@ fn hook(kfunction: &'static str, pid: u32, ctx: &ProbeContext) {
                             .map_err(|_e|1u32
                 ).unwrap()
             };
-            let cond_kfunc = unsafe { core::str::from_utf8_unchecked(&condition.kfunction) };
 
             // Check if the kfunction is involved
-            if cond_kfunc.starts_with(kfunction) && condition.kfunction[kfunction.len()] == 0{ // Get from the condition
-                info!(ctx, "{} detected !", kfunction);
+            if kfunction.eq(&condition.kfunction){ // Get from the condition
+                info!(ctx, "kfunction detected !");
                 // TODO - Extract the condition
                 /*let verified = (condition.check)(4);    // TODO - Check the condition
                 if verified {
@@ -95,4 +96,21 @@ fn try_thesis_code(ctx: ProbeContext) -> Result<u32, u32> {
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
     unsafe { core::hint::unreachable_unchecked() }
+}
+
+
+pub trait ToSlice {
+    
+    fn to_32bytes(&self) -> [u8;32];
+}
+
+impl ToSlice for &str {
+    fn to_32bytes(&self) -> [u8;32] {
+        let mut buff: [u8;32] = [0;32];
+    
+        for i in 0..self.len().min(32) {
+            buff[i] = self.as_bytes()[i];
+        }
+        buff
+    }
 }

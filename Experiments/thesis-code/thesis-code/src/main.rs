@@ -7,12 +7,13 @@ use thesis_code_common::ConditionTypes;
 use thesis_code_common::{ConditionStates::{self, *}, NodeCondition, RingData};
 use tokio::signal;
 
-trait to_slice {
+
+pub trait ToSlice {
     
     fn to_32bytes(&self) -> [u8;32];
 }
 
-impl to_slice for &str {
+impl ToSlice for &str {
     fn to_32bytes(&self) -> [u8;32] {
         let mut buff: [u8;32] = [0;32];
     
