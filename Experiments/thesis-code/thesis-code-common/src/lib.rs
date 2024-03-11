@@ -6,6 +6,18 @@
     - Shared Graph
 */
 
+// Different states of the node conditions
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum ConditionStates {
+    UNREACHABLE,
+    WAITING,
+    VERIFIED,
+}
+
+#[cfg(feature = "user")]
+unsafe impl aya::Pod for ConditionStates {}
+
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct NodeCondition {

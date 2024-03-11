@@ -3,7 +3,7 @@ use aya::programs::KProbe;
 use aya::{include_bytes_aligned, Bpf};
 use aya_log::BpfLogger;
 use log::{info, warn, debug};
-use thesis_code_common::{NodeCondition, RingData};
+use thesis_code_common::{ConditionStates::{self, *}, NodeCondition, RingData};
 use tokio::signal;
 
 #[tokio::main]
@@ -62,17 +62,15 @@ async fn main() -> Result<(), anyhow::Error> {
 
 
     // Create the porcess map
-    let mut process_map: HashMap<_, u32, [u8; 16]> = HashMap::try_from(bpf.map_mut("PROCESS_CONDITIONS").unwrap())?;
-    process_map.insert(1234, [1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0], 0)?;   // fake insert
+    let mut process_map: HashMap<_, u32, [ConditionStates; 16]> = HashMap::try_from(bpf.map_mut("PROCESS_CONDITIONS").unwrap())?;
+    process_map.insert(1234, [WAITING,UNREACHABLE,UNREACHABLE,WAITING,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE], 0)?;   // fake insert
     
     /*  TODO
-        - Wait from signal from kernel
-        KL ==> { PID, KFUNC, ARGS } ==> UL
+        - Wait for signal from kernel
+        KL ==> { PID, Condition Verified } ==> UL
         OnSignalReceived:
-            1. Get Process from PID
-            2. Check if PID is registered, if not add an entry
-            3. Check if some current condition rely on KFUNC
-            4. Check if the condition is satisfied using ARGS
+            1. Update condition
+            2. Look for children
             5. Update Graph status and check if a vulnerability has been triggered
 
     */
