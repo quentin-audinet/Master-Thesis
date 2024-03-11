@@ -30,7 +30,8 @@ pub enum ConditionTypes  {
 #[derive(Clone, Copy)]
 pub struct NodeCondition {
     pub node_type: ConditionTypes,  // The type of the condition
-    pub check: fn(u32) -> bool,     // The condition to check 
+    pub check_type: u8,     // The condition collection to check
+    pub check_num: usize, 
     pub children: &'static [u32],   // List of children indexes
     pub kfunction: [u8;32],    // kfunction involved
 }

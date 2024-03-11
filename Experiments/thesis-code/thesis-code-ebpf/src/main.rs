@@ -5,6 +5,9 @@ use aya_bpf::{helpers::bpf_probe_read_kernel, macros::{kprobe, map}, maps::{Arra
 use aya_log_ebpf::info;
 use thesis_code_common::{ConditionStates, NodeCondition, RingData};
 
+mod conditions;
+use conditions::check;
+
 /*  TODO
     - Create a KProbe for each function (Try to have a pattern for future auto generation)
     - Map : Process -> Graph status
@@ -67,11 +70,18 @@ fn hook(kfunction: &'static str, pid: u32, ctx: &ProbeContext) {
             if kfunction.eq(&condition.kfunction){ // Get from the condition
                 info!(ctx, "kfunction detected !");
                 // TODO - Extract the condition
-                /*let verified = (condition.check)(4);    // TODO - Check the condition
+
+                //let c = unsafe {
+                //    bpf_probe_read_kernel(&conditions::CHECKS_TYPE1).map_err(|_e|1u32).unwrap()
+                //};
+                let num = condition.check_num;
+                info!(ctx,"{},{}",condition.check_type, num);
+                let verified = check(condition.check_type, num, ctx);
+                
                 if verified {
-                    info!(ctx, "Children 0 is {}", condition.children[0])
+                    info!(ctx, "VERIFIED !");
                     // TODO - Update the Process Condition in UL
-                }*/
+                }
             }
         }
     }

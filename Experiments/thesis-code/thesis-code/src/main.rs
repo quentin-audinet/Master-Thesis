@@ -72,11 +72,6 @@ async fn main() -> Result<(), anyhow::Error> {
         - Create the KProbes for each kernel function to hook
         - Map : Process -> Graph status
     */
-    
-    // Declare all hooks here
-    let program: &mut KProbe = bpf.program_mut("thesis_code").unwrap().try_into()?;
-    program.load()?;
-    program.attach("tcp_connect", 0)?;
 
     // Create the ring buffer
     let mut ring_buf = RingBuf::try_from(bpf.take_map("ARRAY").unwrap())?;
@@ -87,22 +82,32 @@ async fn main() -> Result<(), anyhow::Error> {
     // TODO, fill the Graph
     condition_graph.set(0, &NodeCondition {
                                 node_type: ConditionTypes::PRIMARY,
-                                check: |n| n%2 == 0,
+                                check_type: 0,
+                                check_num: 1,
                                 children: &[3,5],
                                 kfunction: "tcp_connect".to_32bytes()
                             }, 0)?;    // fake set
     condition_graph.set(3, &NodeCondition {
                                 node_type: ConditionTypes::SECONDARY,
-                                check: |n| n%6 == 0,
+                                check_type: 1,
+                                check_num: 0,
                                 children: &[5,6],
                                 kfunction: "tcp_receive".to_32bytes()
                             }, 0)?;    // fake set
 
 
-    // Create the porcess map
+    // Create the process map
     let mut process_map: HashMap<_, u32, [ConditionStates; 16]> = HashMap::try_from(bpf.map_mut("PROCESS_CONDITIONS").unwrap())?;
     process_map.insert(1234, [WAITING,UNREACHABLE,UNREACHABLE,WAITING,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE], 0)?;   // fake insert
     
+
+    //--- END OF INITIALISATION --- //
+
+    // Declare all hooks here
+    let program: &mut KProbe = bpf.program_mut("thesis_code").unwrap().try_into()?;
+    program.load()?;
+    program.attach("tcp_connect", 0)?;
+
     /*  TODO
         - Wait for signal from kernel
         KL ==> { PID, Condition Verified } ==> UL
