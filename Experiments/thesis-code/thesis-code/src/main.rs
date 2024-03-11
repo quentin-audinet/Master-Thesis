@@ -3,11 +3,38 @@ use aya::programs::KProbe;
 use aya::{include_bytes_aligned, Bpf};
 use aya_log::BpfLogger;
 use log::{info, warn, debug};
+use thesis_code_common::ConditionTypes;
 use thesis_code_common::{ConditionStates::{self, *}, NodeCondition, RingData};
 use tokio::signal;
 
+trait to_slice {
+    
+    fn to_32bytes(&self) -> [u8;32];
+}
+
+impl to_slice for &str {
+    fn to_32bytes(&self) -> [u8;32] {
+        let mut buff: [u8;32] = [0;32];
+    
+        for i in 0..self.len().min(32) {
+            buff[i] = self.as_bytes()[i];
+        }
+        buff
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
+
+    const FUNC_NAME: [&str;2] = ["tcp_connect", "tcp_receive"];
+    let mut kfunctions: [[u8;32];FUNC_NAME.len()] = [[0;32];2];
+
+    for i in 0..FUNC_NAME.len() {
+        for b in 0..FUNC_NAME[i].len().min(32) {
+            kfunctions[i][b] = FUNC_NAME[i].as_bytes()[b];
+        }
+    }
+
     env_logger::init();
 
     // Bump the memlock rlimit. This is needed for older kernels that don't use the
@@ -57,8 +84,18 @@ async fn main() -> Result<(), anyhow::Error> {
     let mut condition_graph: Array<_, NodeCondition> = Array::try_from(bpf.take_map("CONDITION_GRAPH").unwrap())?;
 
     // TODO, fill the Graph
-    condition_graph.set(0, &NodeCondition { value: 10}, 0)?;    // fake set
-    condition_graph.set(3, &NodeCondition { value: 20}, 0)?;    // fake set
+    condition_graph.set(0, &NodeCondition {
+                                node_type: ConditionTypes::PRIMARY,
+                                check: |n| n%2 == 0,
+                                children: &[3,5],
+                                kfunction: "tcp_connect".to_32bytes()
+                            }, 0)?;    // fake set
+    condition_graph.set(3, &NodeCondition {
+                                node_type: ConditionTypes::SECONDARY,
+                                check: |n| n%6 == 0,
+                                children: &[5,6],
+                                kfunction: "tcp_receive".to_32bytes()
+                            }, 0)?;    // fake set
 
 
     // Create the porcess map
@@ -70,7 +107,7 @@ async fn main() -> Result<(), anyhow::Error> {
         KL ==> { PID, Condition Verified } ==> UL
         OnSignalReceived:
             1. Update condition
-            2. Look for children
+            2. For each children, look if parents have been verified, if so make it WAITING
             5. Update Graph status and check if a vulnerability has been triggered
 
     */

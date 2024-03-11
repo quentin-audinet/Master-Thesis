@@ -1,7 +1,7 @@
 #![no_std]
 #![no_main]
 
-use aya_bpf::{helpers::bpf_probe_read_kernel, macros::{kprobe, map}, maps::{Array, HashMap, RingBuf}, programs::ProbeContext, BpfContext};
+use aya_bpf::{cty::{c_char, c_void}, helpers::{bpf_probe_read_kernel, bpf_probe_read_kernel_str_bytes, gen::bpf_probe_read_kernel_str}, macros::{kprobe, map}, maps::{Array, HashMap, RingBuf}, programs::ProbeContext, BpfContext};
 use aya_log_ebpf::info;
 use thesis_code_common::{ConditionStates, NodeCondition, RingData};
 
@@ -48,27 +48,29 @@ fn hook(kfunction: &'static str, pid: u32, ctx: &ProbeContext) {
         [ConditionStates::UNREACHABLE;16]
     };
 
-    for i in 0..16u32 {
+    for i in 0..current_conditions.len() {
         // Current condition
-        let status = current_conditions[i as usize];
+        let status = current_conditions[i];
     
         if status == ConditionStates::WAITING {
             // Grab the condition
             let condition = unsafe {
                 bpf_probe_read_kernel(
-                    CONDITION_GRAPH.get(i).unwrap() as *const NodeCondition)
+                    CONDITION_GRAPH.get(i as u32).unwrap() as *const NodeCondition)
                             .map_err(|_e|1u32
                 ).unwrap()
             };
-            info!(ctx, "Condition n°{} is {}", i, condition.value);
+            let cond_kfunc = unsafe { core::str::from_utf8_unchecked(&condition.kfunction) };
 
             // Check if the kfunction is involved
-            if kfunction == "tcp_connect" { // Get from the condition
+            if cond_kfunc.starts_with(kfunction) && condition.kfunction[kfunction.len()] == 0{ // Get from the condition
+                info!(ctx, "{} detected !", kfunction);
                 // TODO - Extract the condition
-                let verified = true;    // TODO - Check the condition
+                /*let verified = (condition.check)(4);    // TODO - Check the condition
                 if verified {
+                    info!(ctx, "Children 0 is {}", condition.children[0])
                     // TODO - Update the Process Condition in UL
-                }
+                }*/
             }
         }
     }
@@ -86,9 +88,7 @@ pub fn thesis_code(ctx: ProbeContext) -> u32 {
 
 fn try_thesis_code(ctx: ProbeContext) -> Result<u32, u32> {
     hook("tcp_connect", ctx.pid(), &ctx);
-    let c = unsafe { CONDITION_GRAPH.get(0) }.unwrap();
-    let cond = unsafe { bpf_probe_read_kernel(c as *const NodeCondition).map_err(|_e| 1u32)? };
-    info!(&ctx, "function tcp_connect called on pid {}. Condition is {}", ctx.pid(), cond.value);
+    info!(&ctx, "function tcp_connect called on pid {}", ctx.pid());
     Ok(0)
 }
 
