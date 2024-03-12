@@ -1,11 +1,5 @@
 #![no_std]
 
-/*  TODO
-    Struture to implement:
-    - Conditions
-    - Shared Graph
-*/
-
 // Different states of the node conditions
 #[repr(C)]
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -37,10 +31,10 @@ pub enum CheckTypes {
 pub struct NodeCondition {
     pub node_type: ConditionTypes,  // The type of the condition
     pub check_type: CheckTypes,     // The condition collection to check
-    pub check_num: usize, 
+    pub check_num: usize,           // Which check pick in the collection
     pub children: &'static [u32],   // List of children indexes
-    pub parents: &'static [u32],
-    pub kfunction: [u8;32],    // kfunction involved
+    pub parents: &'static [u32],    // List of parents indexes
+    pub kfunction: [u8;32],         // kfunction involved
 }
 
 #[cfg(feature = "user")]
@@ -61,5 +55,6 @@ pub const CONDITION_NUM: usize = 16;
 
 use ConditionStates::*;
 pub fn get_based_graph() -> [ConditionStates; CONDITION_NUM] {
+    /* $BASED_GRAPH_PLACEHOLDER$ */
     [WAITING,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE]
 }

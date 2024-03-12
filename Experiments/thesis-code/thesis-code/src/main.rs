@@ -120,6 +120,8 @@ async fn main() -> Result<(), anyhow::Error> {
                                 kfunction: "tcp_connect".to_32bytes()
                             }, 0)?;    // fake set
 
+    /* $GRAPH_FILL_PLACEHOLDER$ */
+
 
     // Create the process map
     let mut process_map: HashMap<_, u32, [ConditionStates; CONDITION_NUM]> = HashMap::try_from(bpf.map_mut("PROCESS_CONDITIONS").unwrap())?;    
@@ -127,7 +129,7 @@ async fn main() -> Result<(), anyhow::Error> {
     //--- END OF INITIALISATION --- //
 
 
-    /*  TODO
+    /*  
         - Wait for signal from kernel
         KL ==> { PID, Condition Verified } ==> UL
         OnSignalReceived:
@@ -157,6 +159,23 @@ async fn main() -> Result<(), anyhow::Error> {
 
                 // Get the verified condition node 
                 let condition = condition_graph.get(&(ring.condition as u32), 0)?;
+
+                // Get the process graph
+                let map_result = process_map.get(&ring.pid, 0);
+                // Get the map and update the current condition
+                let mut map = match map_result {
+                    Ok(mut m) => {
+                        m[ring.condition] = ConditionStates::VERIFIED;
+                        m
+                    },
+                    Err(_) => {
+                        let mut m = get_based_graph();
+                        m[ring.condition] = ConditionStates::VERIFIED;
+                        m
+                    },
+                };
+                info!("MAP[0,3,8] [{},{},{}]", map[0] as u8, map[3] as u8, map[8] as u8);
+
                 // Update any child if necessary
                 for child_id in condition.children {
                     info!("\tChild n°{}",child_id);
@@ -164,22 +183,7 @@ async fn main() -> Result<(), anyhow::Error> {
                     let parents = child.parents;
                     info!("Parents of {} are {:?}", child_id, parents);
 
-                    // Get the process graph
-                    let map_result = process_map.get(&ring.pid, 0);
-                    // Get the map and update the current condition
-                    let mut map = match map_result {
-                        Ok(mut m) => {
-                            m[ring.condition] = ConditionStates::VERIFIED;
-                            m
-                        },
-                        Err(_) => {
-                            let mut m = get_based_graph();
-                            m[ring.condition] = ConditionStates::VERIFIED;
-                            m
-                        },
-                    };
-                    info!("MAP[0,3,8] [{},{},{}]", map[0] as u8, map[3] as u8, map[8] as u8);
-
+                    
                     // Check if the new child is reachable ie all its parents are verified
                     let mut reachable = true;
                     for p in parents {
@@ -197,9 +201,9 @@ async fn main() -> Result<(), anyhow::Error> {
                             info!("EXPLOIT HAS BEEN TRIGGERED");
                         }
                     }
-                    // Save the map
-                    process_map.insert(ring.pid, map, 0)?;
                 }
+                // Save the map
+                process_map.insert(ring.pid, map, 0)?;
             },
             None => {}
         };

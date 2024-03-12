@@ -106,6 +106,8 @@ fn try_test(ctx: ProbeContext) -> Result<u32, u32> {
     Ok(0)
 }
 
+/* $KPROBES_PLACEHOLDER$ */
+
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
     unsafe { core::hint::unreachable_unchecked() }

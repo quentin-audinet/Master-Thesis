@@ -17,6 +17,8 @@ pub fn f3(n: u32) -> bool {
     n % 100 > 50
 }
 
+/* $CHECKS_PLACEHOLDER$ */
+
 pub static CHECKS_TYPE1: [fn(&ProbeContext)->bool;2] = [f1, f2];
 pub static CHECKS_TYPE2: [fn(u32)->bool;1] = [f3];
 
@@ -36,3 +38,5 @@ pub fn check(check_type: CheckTypes, num: usize, ctx: &ProbeContext) -> bool {
         false
     }
 }
+
+/* $VERIFY_CHECK_PLACEHOLDER$ */
