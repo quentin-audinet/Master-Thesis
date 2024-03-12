@@ -19,20 +19,27 @@ pub enum ConditionStates {
 unsafe impl aya::Pod for ConditionStates {}
 
 #[repr(C)]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum ConditionTypes  {
     PRIMARY,                // A condition depending on nothing
     SECONDARY,              // Intermediate condition, depending on some others and whose others depend
     TRIGGER,                // A final condition, if validated a vulnerability is triggered
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum CheckTypes {
+    Context,
+    PID,
+}
+
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct NodeCondition {
     pub node_type: ConditionTypes,  // The type of the condition
-    pub check_type: u8,     // The condition collection to check
+    pub check_type: CheckTypes,     // The condition collection to check
     pub check_num: usize, 
     pub children: &'static [u32],   // List of children indexes
+    pub parents: &'static [u32],
     pub kfunction: [u8;32],    // kfunction involved
 }
 
@@ -47,5 +54,12 @@ pub struct GraphStatus {
 #[derive(Clone, Copy)]
 pub struct RingData {
     pub pid: u32, 
-    pub args: [u8;3],
+    pub condition: usize,
+}
+
+pub const CONDITION_NUM: usize = 16;
+
+use ConditionStates::*;
+pub fn get_based_graph() -> [ConditionStates; CONDITION_NUM] {
+    [WAITING,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE]
 }

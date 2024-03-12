@@ -3,8 +3,8 @@ use aya::programs::KProbe;
 use aya::{include_bytes_aligned, Bpf};
 use aya_log::BpfLogger;
 use log::{info, warn, debug};
-use thesis_code_common::ConditionTypes;
-use thesis_code_common::{ConditionStates::{self, *}, NodeCondition, RingData};
+use thesis_code_common::{get_based_graph, CheckTypes, ConditionTypes, CONDITION_NUM};
+use thesis_code_common::{ConditionStates, NodeCondition, RingData};
 use tokio::signal;
 
 
@@ -73,6 +73,21 @@ async fn main() -> Result<(), anyhow::Error> {
         - Map : Process -> Graph status
     */
 
+        // Declare all hooks here
+        let function_list = [];
+
+        for f in function_list {
+            let mut bpf_fun = "thesis_code".to_owned();
+            bpf_fun.push_str(f);
+            let program: &mut KProbe = bpf.program_mut(&bpf_fun).unwrap().try_into()?;
+            program.load()?;
+            program.attach(&f, 0)?;
+        }
+    
+        let program: &mut KProbe = bpf.program_mut("test").unwrap().try_into()?;
+        program.load()?;
+        program.attach("tcp_connect", 0)?;
+
     // Create the ring buffer
     let mut ring_buf = RingBuf::try_from(bpf.take_map("ARRAY").unwrap())?;
 
@@ -82,31 +97,35 @@ async fn main() -> Result<(), anyhow::Error> {
     // TODO, fill the Graph
     condition_graph.set(0, &NodeCondition {
                                 node_type: ConditionTypes::PRIMARY,
-                                check_type: 0,
+                                check_type: CheckTypes::Context,
                                 check_num: 1,
-                                children: &[3,5],
+                                children: &[3],
+                                parents: &[],
                                 kfunction: "tcp_connect".to_32bytes()
-                            }, 0)?;    // fake set
+                            }, 0)?;
     condition_graph.set(3, &NodeCondition {
                                 node_type: ConditionTypes::SECONDARY,
-                                check_type: 1,
+                                check_type: CheckTypes::PID,
                                 check_num: 0,
-                                children: &[5,6],
-                                kfunction: "tcp_receive".to_32bytes()
+                                children: &[8],
+                                parents: &[0],
+                                kfunction: "tcp_connect".to_32bytes()
+                            }, 0)?;
+    condition_graph.set(8, &NodeCondition {
+                                node_type: ConditionTypes::TRIGGER,
+                                check_type: CheckTypes::Context,
+                                check_num: 0,
+                                children: &[],
+                                parents: &[3],
+                                kfunction: "tcp_connect".to_32bytes()
                             }, 0)?;    // fake set
 
 
     // Create the process map
-    let mut process_map: HashMap<_, u32, [ConditionStates; 16]> = HashMap::try_from(bpf.map_mut("PROCESS_CONDITIONS").unwrap())?;
-    process_map.insert(1234, [WAITING,UNREACHABLE,UNREACHABLE,WAITING,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE,UNREACHABLE], 0)?;   // fake insert
-    
+    let mut process_map: HashMap<_, u32, [ConditionStates; CONDITION_NUM]> = HashMap::try_from(bpf.map_mut("PROCESS_CONDITIONS").unwrap())?;    
 
     //--- END OF INITIALISATION --- //
 
-    // Declare all hooks here
-    let program: &mut KProbe = bpf.program_mut("thesis_code").unwrap().try_into()?;
-    program.load()?;
-    program.attach("tcp_connect", 0)?;
 
     /*  TODO
         - Wait for signal from kernel
@@ -129,12 +148,58 @@ async fn main() -> Result<(), anyhow::Error> {
     // Listen for messages from the kernel
     loop {
         match (ring_buf).next() {
+            // If data is received, a condition should be updated
             Some(data) => {
-                // TMP, test communication and array modifications
+                // Grab the data from the ring
                 let ptr = data.as_ptr() as *const RingData;
                 let ring = unsafe { *ptr };
-                info!("Received data {:?} from {}", ring.args, ring.pid);
-                //process_map.insert(1234, [(ring.pid % 100) as u8;16], 0)?;
+                info!("[{}] Condition {} verified !", ring.pid, ring.condition);
+
+                // Get the verified condition node 
+                let condition = condition_graph.get(&(ring.condition as u32), 0)?;
+                // Update any child if necessary
+                for child_id in condition.children {
+                    info!("\tChild n°{}",child_id);
+                    let child = condition_graph.get(child_id, 0)?;
+                    let parents = child.parents;
+                    info!("Parents of {} are {:?}", child_id, parents);
+
+                    // Get the process graph
+                    let map_result = process_map.get(&ring.pid, 0);
+                    // Get the map and update the current condition
+                    let mut map = match map_result {
+                        Ok(mut m) => {
+                            m[ring.condition] = ConditionStates::VERIFIED;
+                            m
+                        },
+                        Err(_) => {
+                            let mut m = get_based_graph();
+                            m[ring.condition] = ConditionStates::VERIFIED;
+                            m
+                        },
+                    };
+                    info!("MAP[0,3,8] [{},{},{}]", map[0] as u8, map[3] as u8, map[8] as u8);
+
+                    // Check if the new child is reachable ie all its parents are verified
+                    let mut reachable = true;
+                    for p in parents {
+                        if !map[*p as usize].eq(&ConditionStates::VERIFIED) {
+                            reachable = false;
+                            info!("Parent {} still unverified", p);
+                            break;
+                        }
+                    }
+                    // If reachable update its state
+                    if reachable {
+                        map[*child_id as usize] = ConditionStates::WAITING;
+                        // Check if the node isn't a trigger one
+                        if child.node_type.eq(&ConditionTypes::TRIGGER) {
+                            info!("EXPLOIT HAS BEEN TRIGGERED");
+                        }
+                    }
+                    // Save the map
+                    process_map.insert(ring.pid, map, 0)?;
+                }
             },
             None => {}
         };

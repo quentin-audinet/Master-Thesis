@@ -3,12 +3,12 @@
 
 use aya_bpf::{helpers::bpf_probe_read_kernel, macros::{kprobe, map}, maps::{Array, HashMap, RingBuf}, programs::ProbeContext, BpfContext};
 use aya_log_ebpf::info;
-use thesis_code_common::{ConditionStates, NodeCondition, RingData};
+use thesis_code_common::{get_based_graph, ConditionStates, NodeCondition, RingData, CONDITION_NUM};
 
 mod conditions;
 use conditions::check;
 
-/*  TODO
+/*
     - Create a KProbe for each function (Try to have a pattern for future auto generation)
     - Map : Process -> Graph status
     Hook:
@@ -22,41 +22,42 @@ static mut RING_BUFFER:RingBuf = RingBuf::with_byte_size(1024, 0);
 // based graph loaded in UL from a config file
 // max_entries could be change with some formating before compilation
 #[map(name = "CONDITION_GRAPH")]
-static mut CONDITION_GRAPH: Array<NodeCondition> = Array::<NodeCondition>::with_max_entries(16, 0);
+static mut CONDITION_GRAPH: Array<NodeCondition> = Array::<NodeCondition>::with_max_entries(CONDITION_NUM as u32, 0);
 
 
 // Map each process to the current conditions.
 // The size of the array must be the number of conditions (or at least)
 #[map(name = "PROCESS_CONDITIONS")]
-static mut PROCESS_CONDITION: HashMap<u32, [ConditionStates;16]> = HashMap::<u32, [ConditionStates; 16]>::with_max_entries(4096, 0);
+static mut PROCESS_CONDITION: HashMap<u32, [ConditionStates;CONDITION_NUM]> = HashMap::<u32, [ConditionStates; CONDITION_NUM]>::with_max_entries(4096, 0);
 
 
 // The global hook
-fn hook(kfunction: &'static str, pid: u32, ctx: &ProbeContext) {
+fn hook(kfunction: &'static str, ctx: &ProbeContext) {
 
     let kfunction = kfunction.to_32bytes();
 
-    let graph = unsafe { PROCESS_CONDITION.get(&1234) };    // key is PID
+    let graph = unsafe { PROCESS_CONDITION.get(&ctx.pid()) };    // key is PID
     
     // get the conditions to read
     let current_conditions =
     // If a Some result is returned, then the processed is already tracked
     if graph.is_some() {
         let array = graph.unwrap();
-        let value = unsafe { bpf_probe_read_kernel(array as *const [ConditionStates;16]).map_err(|_e| 1u32).unwrap() };
+        let value = unsafe { bpf_probe_read_kernel(array as *const [ConditionStates;CONDITION_NUM]).map_err(|_e| 1u32).unwrap() };
         value
     }
     // Otherwise, we should add a new entry in the map
     // For now, just grab the primary conditions
     else {
-        // TODO - Grab primary conditions list
-        [ConditionStates::UNREACHABLE;16]
+        get_based_graph()
     };
 
+    // Loop through all conditions
     for i in 0..current_conditions.len() {
         // Current condition
         let status = current_conditions[i];
     
+        // This status indicates the condition is under monitoring
         if status == ConditionStates::WAITING {
             // Grab the condition
             let condition = unsafe {
@@ -67,38 +68,40 @@ fn hook(kfunction: &'static str, pid: u32, ctx: &ProbeContext) {
             };
 
             // Check if the kfunction is involved
-            if kfunction.eq(&condition.kfunction){ // Get from the condition
+            if kfunction.eq(&condition.kfunction){
                 info!(ctx, "kfunction detected !");
-                // TODO - Extract the condition
-
-                //let c = unsafe {
-                //    bpf_probe_read_kernel(&conditions::CHECKS_TYPE1).map_err(|_e|1u32).unwrap()
-                //};
-                let num = condition.check_num;
-                info!(ctx,"{},{}",condition.check_type, num);
-                let verified = check(condition.check_type, num, ctx);
+ 
+                // Verify the condition
+                // TODO later, improve the check depending on the type
+                let verified = check(condition.check_type, condition.check_num, ctx);
                 
                 if verified {
                     info!(ctx, "VERIFIED !");
-                    // TODO - Update the Process Condition in UL
+                    // Indicate UL that the condition i for process pid has been satisfied
+                    unsafe {
+                        match RING_BUFFER.output(&RingData { pid:  ctx.pid(), condition: i }, 0) {
+                            Ok(_) => (),
+                            Err(e) => {
+                                info!(ctx, "Error: {}", e);
+                            }
+                        }
+                    };
                 }
             }
         }
     }
-
-    unsafe { RING_BUFFER.output(&RingData {pid, args: [1,2,3]}, 0).unwrap() };
 }
 
 #[kprobe]
-pub fn thesis_code(ctx: ProbeContext) -> u32 {
-    match try_thesis_code(ctx) {
+pub fn test(ctx: ProbeContext) -> u32 {
+    match try_test(ctx) {
         Ok(ret) => ret,
         Err(ret) => ret,
     }
 }
 
-fn try_thesis_code(ctx: ProbeContext) -> Result<u32, u32> {
-    hook("tcp_connect", ctx.pid(), &ctx);
+fn try_test(ctx: ProbeContext) -> Result<u32, u32> {
+    hook("tcp_connect", &ctx);
     info!(&ctx, "function tcp_connect called on pid {}", ctx.pid());
     Ok(0)
 }
