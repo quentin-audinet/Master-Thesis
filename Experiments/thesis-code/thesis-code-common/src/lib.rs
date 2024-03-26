@@ -24,6 +24,7 @@ pub enum ConditionTypes  {
 pub enum CheckTypes {
     Context,
     PID,
+    Count,
 }
 
 #[repr(C)]

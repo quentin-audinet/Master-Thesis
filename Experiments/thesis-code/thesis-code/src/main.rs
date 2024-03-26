@@ -107,16 +107,24 @@ async fn main() -> Result<(), anyhow::Error> {
                                 node_type: ConditionTypes::SECONDARY,
                                 check_type: CheckTypes::PID,
                                 check_num: 0,
-                                children: &[8],
+                                children: &[8,5],
                                 parents: &[0],
                                 kfunction: "tcp_connect".to_32bytes()
                             }, 0)?;
     condition_graph.set(8, &NodeCondition {
+                                node_type: ConditionTypes::SECONDARY,
+                                check_type: CheckTypes::Count,
+                                check_num: 0,
+                                children: &[5],
+                                parents: &[3],
+                                kfunction: "tcp_connect".to_32bytes()
+                            }, 0)?;
+    condition_graph.set(5, &NodeCondition {
                                 node_type: ConditionTypes::TRIGGER,
-                                check_type: CheckTypes::Context,
+                                check_type: CheckTypes::PID,
                                 check_num: 0,
                                 children: &[],
-                                parents: &[3],
+                                parents: &[8,3],
                                 kfunction: "tcp_connect".to_32bytes()
                             }, 0)?;    // fake set
 
