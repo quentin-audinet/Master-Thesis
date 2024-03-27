@@ -68,16 +68,12 @@ async fn main() -> Result<(), anyhow::Error> {
         let function_list = [/* $KFUNCTIONS_PLACEHOLDER$ */];
 
         for f in function_list {
-            let mut bpf_fun = "thesis_code".to_owned();
+            let mut bpf_fun = "thesis_code_".to_owned();
             bpf_fun.push_str(f);
             let program: &mut KProbe = bpf.program_mut(&bpf_fun).unwrap().try_into()?;
             program.load()?;
             program.attach(&f, 0)?;
         }
-    
-        let program: &mut KProbe = bpf.program_mut("test").unwrap().try_into()?;
-        program.load()?;
-        program.attach("tcp_connect", 0)?;
 
     // Create the ring buffer
     let mut ring_buf = RingBuf::try_from(bpf.take_map("ARRAY").unwrap())?;
@@ -139,14 +135,11 @@ async fn main() -> Result<(), anyhow::Error> {
                         m
                     },
                 };
-                info!("MAP[0,3,8] [{},{},{}]", map[0] as u8, map[3] as u8, map[8] as u8);
 
                 // Update any child if necessary
                 for child_id in condition.children {
-                    info!("\tChild n°{}",child_id);
                     let child = condition_graph.get(child_id, 0)?;
                     let parents = child.parents;
-                    info!("Parents of {} are {:?}", child_id, parents);
 
                     
                     // Check if the new child is reachable ie all its parents are verified
@@ -154,7 +147,6 @@ async fn main() -> Result<(), anyhow::Error> {
                     for p in parents {
                         if !map[*p as usize].eq(&ConditionStates::VERIFIED) {
                             reachable = false;
-                            info!("Parent {} still unverified", p);
                             break;
                         }
                     }

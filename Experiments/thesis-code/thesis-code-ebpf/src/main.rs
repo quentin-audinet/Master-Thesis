@@ -91,15 +91,12 @@ fn hook(kfunction: &'static str, ctx: &ProbeContext) {
             };
 
             // Check if the kfunction is involved
-            if kfunction.eq(&condition.kfunction){
-                info!(ctx, "kfunction detected !");
- 
+            if kfunction.eq(&condition.kfunction){ 
                 // Verify the condition
                 // TODO later, improve the check depending on the type
-                let verified = check(condition.condition_type, condition.check_num, ctx, count);
+                let verified = check(condition.condition_type, condition.check_num, ctx, ctx.pid(), count);
                 
                 if verified {
-                    info!(ctx, "VERIFIED !");
                     // Indicate UL that the condition i for process pid has been satisfied
                     unsafe {
                         match RING_BUFFER.output(&RingData { pid:  ctx.pid(), condition: i }, 0) {
@@ -116,26 +113,37 @@ fn hook(kfunction: &'static str, ctx: &ProbeContext) {
 }
 
 #[kprobe]
-pub fn test(ctx: ProbeContext) -> u32 {
-    match try_test(ctx) {
+pub fn thesis_code_tcp_connect(ctx: ProbeContext) -> u32 {
+    match try_thesis_code_tcp_connect(ctx) {
         Ok(ret) => ret,
         Err(ret) => ret,
     }
 }
 
-fn try_test(ctx: ProbeContext) -> Result<u32, u32> {
+fn try_thesis_code_tcp_connect(ctx: ProbeContext) -> Result<u32, u32> {
     hook("tcp_connect", &ctx);
-    info!(&ctx, "function tcp_connect called on pid {}", ctx.pid());
+    //info!(&ctx, "function tcp_connect called on pid {}", ctx.pid());
     Ok(0)
 }
 
-/* $KPROBES_PLACEHOLDER$ */
+#[kprobe]
+pub fn thesis_code_tcp_recvmsg(ctx: ProbeContext) -> u32 {
+    match try_thesis_code_tcp_recvmsg(ctx) {
+        Ok(ret) => ret,
+        Err(ret) => ret,
+    }
+}
+
+fn try_thesis_code_tcp_recvmsg(ctx: ProbeContext) -> Result<u32, u32> {
+    hook("tcp_recvmsg", &ctx);
+    //info!(&ctx, "function tcp_recvmsg called on pid {}", ctx.pid());
+    Ok(0)
+}
 
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
     unsafe { core::hint::unreachable_unchecked() }
 }
-
 
 pub trait ToSlice {
     

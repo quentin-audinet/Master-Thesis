@@ -91,15 +91,12 @@ fn hook(kfunction: &'static str, ctx: &ProbeContext) {
             };
 
             // Check if the kfunction is involved
-            if kfunction.eq(&condition.kfunction){
-                info!(ctx, "kfunction detected !");
- 
+            if kfunction.eq(&condition.kfunction){ 
                 // Verify the condition
                 // TODO later, improve the check depending on the type
-                let verified = check(condition.condition_type, condition.check_num, ctx, count);
+                let verified = check(condition.condition_type, condition.check_num, ctx, ctx.pid(), count);
                 
                 if verified {
-                    info!(ctx, "VERIFIED !");
                     // Indicate UL that the condition i for process pid has been satisfied
                     unsafe {
                         match RING_BUFFER.output(&RingData { pid:  ctx.pid(), condition: i }, 0) {
@@ -121,7 +118,6 @@ fn hook(kfunction: &'static str, ctx: &ProbeContext) {
 fn panic(_info: &core::panic::PanicInfo) -> ! {
     unsafe { core::hint::unreachable_unchecked() }
 }
-
 
 pub trait ToSlice {
     

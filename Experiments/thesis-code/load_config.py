@@ -10,10 +10,10 @@ MODEL_MAIN =         "models/main.model.rs"
 MODEL_CONDITIONS =   "models/conditions.model.rs"
 MODEL_COMMON =       "models/lib.model.rs"
 
-OUTPUT_MAIN_EBPF =  "models/out/main_ebpf.rs"    # TO CHANGE
-OUTPUT_MAIN =       "models/out/main.rs"
-OUTPUT_CONDITIONS = "models/out/conditions.rs"
-OUTPUT_COMMON =     "models/out/lib.rs"
+OUTPUT_MAIN_EBPF =  "thesis-code-ebpf/src/main.rs"
+OUTPUT_MAIN =       "thesis-code/src/main.rs"
+OUTPUT_CONDITIONS = "thesis-code-ebpf/src/conditions.rs"
+OUTPUT_COMMON =     "thesis-code-common/src/lib.rs"
 
 check_indexes = {}
 
@@ -144,7 +144,7 @@ def gen_checks(condition_lists):
         params = ', '.join([param.split(':')[0].strip() for param in  args.split(',')])
         num_check = []
         for i in range(len(condition_lists[condition_type])):
-            num_check.append("else if num == " + str(i) + " { CHECKS_TYPE_" + condition_type + "[" + str(i) + "](" + params + ") }")
+            num_check.append("else if num == " + str(i) + " { CHECK_TYPE_" + condition_type + "[" + str(i) + "](" + params + ") }")
         model = open("models/checks_conditions.model","r").read() \
             .replace("{$CONDITION_TYPE$}", condition_type) \
             .replace("{$NUM_CHECK$}", "\n\t\t".join(num_check))
@@ -217,11 +217,11 @@ def get_condition_lists(config):
 
 # Get the args for a given condition type
 def get_args(condition_type):
-    if condition_type == "Context":
+    if condition_type == "CONTEXT":
         return ("ctx: &ProbeContext")
     elif condition_type == "PID":
         return "pid: u32"
-    elif condition_type == "Count":
+    elif condition_type == "COUNT":
         return "count: u32"
 
 

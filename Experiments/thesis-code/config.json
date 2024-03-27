@@ -5,14 +5,14 @@
             "id": 0,
             "kfunction": "tcp_connect",
             "type": "PRIMARY",
-            "condition_type": "Context",
-            "condition": "ctx.arg(1).ok_or(0_u32).unwrap() > 20",
+            "condition_type": "CONTEXT",
+            "condition": "ctx.pid() % 2 == 0",
             "children": [1],
             "parents": []
         },
         {
             "id": 1,
-            "kfunction": "tcp_recv",
+            "kfunction": "tcp_connect",
             "type": "SECONDARY",
             "condition_type": "PID",
             "condition": "pid%100 > 20",
@@ -23,7 +23,7 @@
             "id": 2,
             "kfunction": "tcp_connect",
             "type": "SECONDARY",
-            "condition_type": "Count",
+            "condition_type": "COUNT",
             "condition": "count>10",
             "children": [3],
             "parents": [1]
@@ -33,9 +33,36 @@
             "kfunction": "tcp_connect",
             "type": "TRIGGER",
             "condition_type": "PID",
-            "condition": "pid%2==0",
+            "condition": "pid%4==0",
             "children": [],
             "parents": [1,2]
+        },
+        {
+            "id": 4,
+            "kfunction": "tcp_connect",
+            "type": "PRIMARY",
+            "condition_type": "PID",
+            "condition": "pid%2==0",
+            "children": [5],
+            "parents": []
+        },
+        {
+            "id": 5,
+            "kfunction": "tcp_recvmsg",
+            "type": "SECONDARY",
+            "condition_type": "COUNT",
+            "condition": "count > 100",
+            "children": [6],
+            "parents": [4]
+        },
+        {
+            "id": 6,
+            "kfunction": "tcp_connect",
+            "type": "TRIGGER",
+            "condition_type": "PID",
+            "condition": "pid%2==0",
+            "children": [],
+            "parents": [5]  
         }
     ]
 }
