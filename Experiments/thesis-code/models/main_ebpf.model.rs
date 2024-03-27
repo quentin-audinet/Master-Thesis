@@ -115,20 +115,6 @@ fn hook(kfunction: &'static str, ctx: &ProbeContext) {
     }
 }
 
-#[kprobe]
-pub fn test(ctx: ProbeContext) -> u32 {
-    match try_test(ctx) {
-        Ok(ret) => ret,
-        Err(ret) => ret,
-    }
-}
-
-fn try_test(ctx: ProbeContext) -> Result<u32, u32> {
-    hook("tcp_connect", &ctx);
-    info!(&ctx, "function tcp_connect called on pid {}", ctx.pid());
-    Ok(0)
-}
-
 /* $KPROBES_PLACEHOLDER$ */
 
 #[panic_handler]

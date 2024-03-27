@@ -116,20 +116,32 @@ fn hook(kfunction: &'static str, ctx: &ProbeContext) {
 }
 
 #[kprobe]
-pub fn test(ctx: ProbeContext) -> u32 {
-    match try_test(ctx) {
+pub fn thesis_tcp_connect(ctx: ProbeContext) -> u32 {
+    match try_thesis_tcp_connect(ctx) {
         Ok(ret) => ret,
         Err(ret) => ret,
     }
 }
 
-fn try_test(ctx: ProbeContext) -> Result<u32, u32> {
+fn try_thesis_tcp_connect(ctx: ProbeContext) -> Result<u32, u32> {
     hook("tcp_connect", &ctx);
     info!(&ctx, "function tcp_connect called on pid {}", ctx.pid());
     Ok(0)
 }
 
-/* $KPROBES_PLACEHOLDER$ */
+#[kprobe]
+pub fn thesis_tcp_recv(ctx: ProbeContext) -> u32 {
+    match try_thesis_tcp_recv(ctx) {
+        Ok(ret) => ret,
+        Err(ret) => ret,
+    }
+}
+
+fn try_thesis_tcp_recv(ctx: ProbeContext) -> Result<u32, u32> {
+    hook("tcp_recv", &ctx);
+    info!(&ctx, "function tcp_recv called on pid {}", ctx.pid());
+    Ok(0)
+}
 
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {

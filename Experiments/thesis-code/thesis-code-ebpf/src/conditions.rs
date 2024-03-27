@@ -21,7 +21,7 @@ pub fn f4(n: u32) -> bool {
     n > 10
 }
 
-/* $CHECKS_PLACEHOLDER$ */
+/* $CHECK_FUNCS_PLACEHOLDER$ */
 
 pub static CHECKS_TYPE1: [fn(&ProbeContext)->bool;2] = [f1, f2];    // Context based
 pub static CHECKS_TYPE2: [fn(u32)->bool;1] = [f3];                  // PID Based
@@ -48,4 +48,4 @@ pub fn check(check_type: CheckTypes, num: usize, ctx: &ProbeContext, count: u32)
     }
 }
 
-/* $VERIFY_CHECK_PLACEHOLDER$ */
+/* $CHECK_PLACEHOLDER$ */

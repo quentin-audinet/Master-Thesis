@@ -27,15 +27,6 @@ impl ToSlice for &str {
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
 
-    const FUNC_NAME: [&str;2] = ["tcp_connect", "tcp_receive"];
-    let mut kfunctions: [[u8;32];FUNC_NAME.len()] = [[0;32];2];
-
-    for i in 0..FUNC_NAME.len() {
-        for b in 0..FUNC_NAME[i].len().min(32) {
-            kfunctions[i][b] = FUNC_NAME[i].as_bytes()[b];
-        }
-    }
-
     env_logger::init();
 
     // Bump the memlock rlimit. This is needed for older kernels that don't use the
@@ -93,40 +84,6 @@ async fn main() -> Result<(), anyhow::Error> {
 
     // Create the Graph of Conditions.
     let mut condition_graph: Array<_, NodeCondition> = Array::try_from(bpf.take_map("CONDITION_GRAPH").unwrap())?;
-
-    // TODO, fill the Graph
-    condition_graph.set(0, &NodeCondition {
-                                node_type: ConditionTypes::PRIMARY,
-                                condition_type: CheckTypes::Context,
-                                check_num: 1,
-                                children: &[3],
-                                parents: &[],
-                                kfunction: "tcp_connect".to_32bytes()
-                            }, 0)?;
-    condition_graph.set(3, &NodeCondition {
-                                node_type: ConditionTypes::SECONDARY,
-                                condition_type: CheckTypes::PID,
-                                check_num: 0,
-                                children: &[8,5],
-                                parents: &[0],
-                                kfunction: "tcp_connect".to_32bytes()
-                            }, 0)?;
-    condition_graph.set(8, &NodeCondition {
-                                node_type: ConditionTypes::SECONDARY,
-                                condition_type: CheckTypes::Count,
-                                check_num: 0,
-                                children: &[5],
-                                parents: &[3],
-                                kfunction: "tcp_connect".to_32bytes()
-                            }, 0)?;
-    condition_graph.set(5, &NodeCondition {
-                                node_type: ConditionTypes::TRIGGER,
-                                condition_type: CheckTypes::PID,
-                                check_num: 0,
-                                children: &[],
-                                parents: &[8,3],
-                                kfunction: "tcp_connect".to_32bytes()
-                            }, 0)?;    // fake set
 
 /* $GRAPH_FILL_PLACEHOLDER$ */
 

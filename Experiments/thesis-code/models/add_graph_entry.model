@@ -1,0 +1,8 @@
+    condition_graph.set({$ID$}, &NodeCondition {
+                                node_type: ConditionTypes::{$NODE_TYPE$},
+                                condition_type: CheckTypes::{$CONDITION_TYPE$},
+                                check_num: {$CHECK_NUM$},
+                                children: &[{$CHILDREN$}],
+                                parents: &[{$PARENTS$}],
+                                kfunction: "{$KFUNCTION$}".to_32bytes()
+                            }, 0)?;
