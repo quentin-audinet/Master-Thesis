@@ -65,7 +65,7 @@ async fn main() -> Result<(), anyhow::Error> {
     */
 
         // Declare all hooks here
-        let function_list = ["tcp_connect", "tcp_recvmsg"];
+        let function_list = ["ksys_msgget", "do_msgsnd", "do_msgrcv", "try_to_wake_up"];
 
         for f in function_list {
             let mut bpf_fun = "thesis_code_".to_owned();
@@ -83,59 +83,35 @@ async fn main() -> Result<(), anyhow::Error> {
 
     condition_graph.set(0, &NodeCondition {
                                 node_type: ConditionTypes::PRIMARY,
-                                condition_type: CheckTypes::CONTEXT,
+                                condition_type: CheckTypes::COUNT,
                                 check_num: 0,
                                 children: &[1],
                                 parents: &[],
-                                kfunction: "tcp_connect".to_32bytes()
+                                kfunction: "ksys_msgget".to_32bytes()
                             }, 0)?;
     condition_graph.set(1, &NodeCondition {
                                 node_type: ConditionTypes::SECONDARY,
-                                condition_type: CheckTypes::PID,
-                                check_num: 0,
-                                children: &[2,3],
+                                condition_type: CheckTypes::COUNT,
+                                check_num: 1,
+                                children: &[2],
                                 parents: &[0],
-                                kfunction: "tcp_connect".to_32bytes()
+                                kfunction: "do_msgsnd".to_32bytes()
                             }, 0)?;
     condition_graph.set(2, &NodeCondition {
                                 node_type: ConditionTypes::SECONDARY,
                                 condition_type: CheckTypes::COUNT,
-                                check_num: 0,
+                                check_num: 2,
                                 children: &[3],
                                 parents: &[1],
-                                kfunction: "tcp_connect".to_32bytes()
+                                kfunction: "do_msgrcv".to_32bytes()
                             }, 0)?;
     condition_graph.set(3, &NodeCondition {
                                 node_type: ConditionTypes::TRIGGER,
                                 condition_type: CheckTypes::PID,
-                                check_num: 1,
+                                check_num: 0,
                                 children: &[],
-                                parents: &[1,2],
-                                kfunction: "tcp_connect".to_32bytes()
-                            }, 0)?;
-    condition_graph.set(4, &NodeCondition {
-                                node_type: ConditionTypes::PRIMARY,
-                                condition_type: CheckTypes::PID,
-                                check_num: 2,
-                                children: &[5],
-                                parents: &[],
-                                kfunction: "tcp_connect".to_32bytes()
-                            }, 0)?;
-    condition_graph.set(5, &NodeCondition {
-                                node_type: ConditionTypes::SECONDARY,
-                                condition_type: CheckTypes::COUNT,
-                                check_num: 1,
-                                children: &[6],
-                                parents: &[4],
-                                kfunction: "tcp_recvmsg".to_32bytes()
-                            }, 0)?;
-    condition_graph.set(6, &NodeCondition {
-                                node_type: ConditionTypes::TRIGGER,
-                                condition_type: CheckTypes::PID,
-                                check_num: 3,
-                                children: &[],
-                                parents: &[5],
-                                kfunction: "tcp_connect".to_32bytes()
+                                parents: &[2],
+                                kfunction: "try_to_wake_up".to_32bytes()
                             }, 0)?;
 
 
@@ -171,7 +147,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 // Grab the data from the ring
                 let ptr = data.as_ptr() as *const RingData;
                 let ring = unsafe { *ptr };
-                info!("[{}] Condition {} verified !", ring.pid, ring.condition);
+                //info!("[{}] Condition {} verified !", ring.pid, ring.condition);
 
                 // Get the verified condition node 
                 let condition = condition_graph.get(&(ring.condition as u32), 0)?;
@@ -210,7 +186,7 @@ async fn main() -> Result<(), anyhow::Error> {
                         map[*child_id as usize] = ConditionStates::WAITING;
                         // Check if the node isn't a trigger one
                         if child.node_type.eq(&ConditionTypes::TRIGGER) {
-                            info!("EXPLOIT HAS BEEN TRIGGERED");
+                            info!("EXPLOIT HAS BEEN TRIGGERED BY {}", ring.pid);
                         }
                     }
                 }

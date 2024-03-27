@@ -51,6 +51,12 @@ def declare_hook(kfunctions):
     return
 
 
+def set_condition_types(condition_lists):
+    global new_common
+    placeholder = "/* $CONDITION_TYPES_PLACEHOLDER$ */"
+    code = ",\n".join(list(condition_lists.keys()))
+    new_common = new_common.replace(placeholder, code)
+    return
 
 # Fill the graph with node in main file
 def fill_graph(config, condition_lists):
@@ -180,6 +186,7 @@ def main():
 
     gen_kprobes(kfunctions)
     declare_hook(kfunctions)
+    set_condition_types(condition_lists)
     fill_graph(config, condition_lists)
     gen_check_funcs(config)
     gen_checks(condition_lists)

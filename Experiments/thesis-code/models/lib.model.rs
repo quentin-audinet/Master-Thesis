@@ -22,9 +22,7 @@ pub enum ConditionTypes  {
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum CheckTypes {
-    CONTEXT,
-    PID,
-    COUNT,
+/* $CONDITION_TYPES_PLACEHOLDER$ */
 }
 
 #[repr(C)]

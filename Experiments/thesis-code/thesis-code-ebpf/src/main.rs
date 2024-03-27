@@ -113,30 +113,58 @@ fn hook(kfunction: &'static str, ctx: &ProbeContext) {
 }
 
 #[kprobe]
-pub fn thesis_code_tcp_connect(ctx: ProbeContext) -> u32 {
-    match try_thesis_code_tcp_connect(ctx) {
+pub fn thesis_code_ksys_msgget(ctx: ProbeContext) -> u32 {
+    match try_thesis_code_ksys_msgget(ctx) {
         Ok(ret) => ret,
         Err(ret) => ret,
     }
 }
 
-fn try_thesis_code_tcp_connect(ctx: ProbeContext) -> Result<u32, u32> {
-    hook("tcp_connect", &ctx);
-    //info!(&ctx, "function tcp_connect called on pid {}", ctx.pid());
+fn try_thesis_code_ksys_msgget(ctx: ProbeContext) -> Result<u32, u32> {
+    hook("ksys_msgget", &ctx);
+    //info!(&ctx, "function ksys_msgget called on pid {}", ctx.pid());
     Ok(0)
 }
 
 #[kprobe]
-pub fn thesis_code_tcp_recvmsg(ctx: ProbeContext) -> u32 {
-    match try_thesis_code_tcp_recvmsg(ctx) {
+pub fn thesis_code_do_msgsnd(ctx: ProbeContext) -> u32 {
+    match try_thesis_code_do_msgsnd(ctx) {
         Ok(ret) => ret,
         Err(ret) => ret,
     }
 }
 
-fn try_thesis_code_tcp_recvmsg(ctx: ProbeContext) -> Result<u32, u32> {
-    hook("tcp_recvmsg", &ctx);
-    //info!(&ctx, "function tcp_recvmsg called on pid {}", ctx.pid());
+fn try_thesis_code_do_msgsnd(ctx: ProbeContext) -> Result<u32, u32> {
+    hook("do_msgsnd", &ctx);
+    //info!(&ctx, "function do_msgsnd called on pid {}", ctx.pid());
+    Ok(0)
+}
+
+#[kprobe]
+pub fn thesis_code_do_msgrcv(ctx: ProbeContext) -> u32 {
+    match try_thesis_code_do_msgrcv(ctx) {
+        Ok(ret) => ret,
+        Err(ret) => ret,
+    }
+}
+
+fn try_thesis_code_do_msgrcv(ctx: ProbeContext) -> Result<u32, u32> {
+    hook("do_msgrcv", &ctx);
+    //info!(&ctx, "function do_msgrcv called on pid {}", ctx.pid());
+    Ok(0)
+}
+
+#[kprobe]
+pub fn thesis_code_try_to_wake_up(ctx: ProbeContext) -> u32 {
+    match try_thesis_code_try_to_wake_up(ctx) {
+        Ok(ret) => ret,
+        Err(ret) => ret,
+    }
+}
+
+fn try_thesis_code_try_to_wake_up(ctx: ProbeContext) -> Result<u32, u32> {
+    hook("try_to_wake_up", &ctx);
+    //info!(&ctx, "function try_to_wake_up called on pid {}", ctx.pid());
     Ok(0)
 }
 

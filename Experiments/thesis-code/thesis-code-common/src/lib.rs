@@ -22,9 +22,8 @@ pub enum ConditionTypes  {
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum CheckTypes {
-    CONTEXT,
-    PID,
-    COUNT,
+COUNT,
+PID
 }
 
 #[repr(C)]
@@ -52,9 +51,9 @@ pub struct RingData {
     pub condition: usize,
 }
 
-pub const CONDITION_NUM: usize = 7;
+pub const CONDITION_NUM: usize = 4;
 
 use ConditionStates::*;
 pub fn get_based_graph() -> [ConditionStates; CONDITION_NUM] {
-    [WAITING, UNREACHABLE, UNREACHABLE, UNREACHABLE, WAITING, UNREACHABLE, UNREACHABLE]
+    [WAITING, UNREACHABLE, UNREACHABLE, UNREACHABLE]
 }

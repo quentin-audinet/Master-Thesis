@@ -116,7 +116,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 // Grab the data from the ring
                 let ptr = data.as_ptr() as *const RingData;
                 let ring = unsafe { *ptr };
-                info!("[{}] Condition {} verified !", ring.pid, ring.condition);
+                //info!("[{}] Condition {} verified !", ring.pid, ring.condition);
 
                 // Get the verified condition node 
                 let condition = condition_graph.get(&(ring.condition as u32), 0)?;
@@ -155,7 +155,7 @@ async fn main() -> Result<(), anyhow::Error> {
                         map[*child_id as usize] = ConditionStates::WAITING;
                         // Check if the node isn't a trigger one
                         if child.node_type.eq(&ConditionTypes::TRIGGER) {
-                            info!("EXPLOIT HAS BEEN TRIGGERED");
+                            info!("EXPLOIT HAS BEEN TRIGGERED BY {}", ring.pid);
                         }
                     }
                 }
