@@ -1,0 +1,1 @@
+pub static CHECK_TYPE_{$CONDITION_TYPE$}: [fn({$ARGS_TYPE$})->bool;{$SIZE$}] = [{$FUNCTIONS$}]; // {$CONDITION_TYPE$} based

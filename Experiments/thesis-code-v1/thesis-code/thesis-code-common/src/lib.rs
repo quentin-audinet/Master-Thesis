@@ -22,14 +22,15 @@ pub enum ConditionTypes  {
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum CheckTypes {
-/* $CONDITION_TYPES_PLACEHOLDER$ */
+    COUNT,
+	PID
 }
 
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct NodeCondition {
     pub node_type: ConditionTypes,  // The type of the condition
-    pub condition_type: CheckTypes,     // The condition collection to check
+    pub condition_type: CheckTypes, // The condition collection to check
     pub check_num: usize,           // Which check pick in the collection
     pub children: &'static [u32],   // List of children indexes
     pub parents: &'static [u32],    // List of parents indexes
@@ -50,9 +51,9 @@ pub struct RingData {
     pub condition: usize,
 }
 
-/* $CONDITION_NUM_PLACEHOLDER$ */
+pub const CONDITION_NUM: usize = 4;
 
 use ConditionStates::*;
 pub fn get_based_graph() -> [ConditionStates; CONDITION_NUM] {
-    /* $BASED_GRAPH_PLACEHOLDER$ */
+    [WAITING, UNREACHABLE, UNREACHABLE, UNREACHABLE]
 }

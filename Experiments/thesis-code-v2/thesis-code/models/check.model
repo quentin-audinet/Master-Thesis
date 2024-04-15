@@ -1,0 +1,7 @@
+pub fn check(check_type: CheckTypes, num: usize, ctx: &ProbeContext, pid: u32, count: u32) -> bool {
+
+    {$CONDITIONS$}
+    else {
+        false
+    }
+}

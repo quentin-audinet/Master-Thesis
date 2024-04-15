@@ -1,0 +1,13 @@
+#[kprobe]
+pub fn thesis_code_{$kfunction$}(ctx: ProbeContext) -> u32 {
+    match try_thesis_code_{$kfunction$}(ctx) {
+        Ok(ret) => ret,
+        Err(ret) => ret,
+    }
+}
+
+fn try_thesis_code_{$kfunction$}(ctx: ProbeContext) -> Result<u32, u32> {
+    hook("{$kfunction$}", &ctx);
+    //info!(&ctx, "function {$kfunction$} called on pid {}", ctx.pid());
+    Ok(0)
+}

@@ -54,7 +54,7 @@ def declare_hook(kfunctions):
 def set_condition_types(condition_lists):
     global new_common
     placeholder = "/* $CONDITION_TYPES_PLACEHOLDER$ */"
-    code = ",\n".join(list(condition_lists.keys()))
+    code = ",\n\t".join(list(condition_lists.keys()))
     new_common = new_common.replace(placeholder, code)
     return
 

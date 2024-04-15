@@ -1,0 +1,5 @@
+    else if check_type == CheckTypes::{$CONDITION_TYPE$} {
+        if num >= CHECK_TYPE_{$CONDITION_TYPE$}.len() { false }
+        {$NUM_CHECK$}
+        else { false }
+    }

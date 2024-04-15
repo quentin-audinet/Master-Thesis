@@ -1,0 +1,41 @@
+{
+    "graph":[
+        {
+            "id": 0,
+            "kfunction": "ksys_msgget",
+            "type": "PRIMARY",
+            "condition_type": "COUNT",
+            "condition": "count > 1000",
+            "children": [1],
+            "parents": []
+        },
+        {
+            "id": 1,
+            "kfunction": "do_msgsnd",
+            "type": "SECONDARY",
+            "condition_type": "COUNT",
+            "condition": "count > 2000",
+            "children": [2],
+            "parents": [0]
+        },
+        {
+            "id": 2,
+            "kfunction": "do_msgrcv",
+            "type": "SECONDARY",
+            "condition_type": "COUNT",
+            "condition": "count > 1",
+            "children": [3],
+            "parents": [1]
+        }
+        ,
+        {
+            "id": 3,
+            "kfunction": "try_to_wake_up",
+            "type": "TRIGGER",
+            "condition_type": "PID",
+            "condition": "pid == pid",
+            "children": [],
+            "parents": [2]
+        }
+    ]
+}
