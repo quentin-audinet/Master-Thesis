@@ -1,6 +1,5 @@
 
-use aya_ebpf::{programs::ProbeContext, EbpfContext};
-use thesis_code_common::CheckTypes;
+use aya_ebpf::{helpers::bpf_probe_read_kernel, programs::ProbeContext, EbpfContext};
 
 /* $CHECK_FUNCS_PLACEHOLDER$ */
 

@@ -1,7 +1,8 @@
-pub fn check(check_type: CheckTypes, num: usize, ctx: &ProbeContext, pid: u32, count: u32) -> bool {
-
+pub fn check(id: usize, ctx: &ProbeContext, pid: u32, count: u32) -> bool {
+    let result = 
     {$CONDITIONS$}
     else {
-        false
-    }
+        Err(false)
+    };
+    result.unwrap()
 }

@@ -1,1 +1,1 @@
-pub static CHECK_TYPE_{$CONDITION_TYPE$}: [fn({$ARGS_TYPE$})->bool;{$SIZE$}] = [{$FUNCTIONS$}]; // {$CONDITION_TYPE$} based
+pub static CHECK_FUNCTIONS: [fn(&ProbeContext, u32, u32)->bool;{$SIZE$}] = [{$FUNCTIONS$}]; // List of all conditions

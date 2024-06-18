@@ -20,18 +20,10 @@ pub enum ConditionTypes  {
     TRIGGER,                // A final condition, if validated a vulnerability is triggered
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub enum CheckTypes {
-    COUNT,
-	PID
-}
-
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct NodeCondition {
     pub node_type: ConditionTypes,  // The type of the condition
-    pub condition_type: CheckTypes, // The condition collection to check
-    pub check_num: usize,           // Which check pick in the collection
     pub children: &'static [u32],   // List of children indexes
     pub parents: &'static [u32],    // List of parents indexes
     pub kfunction: [u8;32],         // kfunction involved

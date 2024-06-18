@@ -3,7 +3,7 @@ use aya::programs::KProbe;
 use aya::{include_bytes_aligned, Ebpf};
 use aya_log::EbpfLogger;
 use log::{info, warn, debug};
-use thesis_code_common::{get_based_graph, CheckTypes, ConditionTypes, CONDITION_NUM};
+use thesis_code_common::{get_based_graph, ConditionTypes, CONDITION_NUM};
 use thesis_code_common::{ConditionStates, NodeCondition, RingData};
 use tokio::signal;
 

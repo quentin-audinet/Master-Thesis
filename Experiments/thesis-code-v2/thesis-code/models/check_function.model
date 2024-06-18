@@ -1,3 +1,3 @@
-pub fn {$NAME$}({$ARGS$}) -> bool {
+pub fn {$NAME$}(ctx: &ProbeContext, pid: u32, count: u32) -> Result<bool,bool> {
     {$CONDITION$}
 }

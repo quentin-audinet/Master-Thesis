@@ -1,0 +1,4 @@
+PRIMARY 0 SATISFIES tcp_connect CALLED == 440 OR >= 1234 DEPENDS []
+SECONDARY 1 SATISFIES try_to_wake_up PID >= 0 AND < 50 DEPENDS [0]
+SECONDARY 2 SATISFIES tcp_connect ARGS ARG_0->sock_common.skc_dport == u16(22) AND ARG_2 < u32(10) OR ARG_3->current_task->cname != str("Hello world :) !") DEPENDS [0,1]
+TRIGGER 3 SATISFIES fake_call CALLED >= 1 DEPENDS [1,2]

@@ -76,16 +76,16 @@ fn hook(kfunction: &'static str, ctx: &ProbeContext) {
     };
 
     // Loop through all conditions
-    for i in 0..current_conditions.len() {
+    for id in 0..current_conditions.len() {
         // Current condition
-        let status = current_conditions[i];
+        let status = current_conditions[id];
     
         // This status indicates the condition is under monitoring
         if status == ConditionStates::WAITING {
             // Grab the condition
             let condition = unsafe {
                 bpf_probe_read_kernel(
-                    CONDITION_GRAPH.get(i as u32).unwrap() as *const NodeCondition)
+                    CONDITION_GRAPH.get(id as u32).unwrap() as *const NodeCondition)
                             .map_err(|_e|1u32
                 ).unwrap()
             };
@@ -94,12 +94,12 @@ fn hook(kfunction: &'static str, ctx: &ProbeContext) {
             if kfunction.eq(&condition.kfunction){ 
                 // Verify the condition
                 // TODO later, improve the check depending on the type
-                let verified = check(condition.condition_type, condition.check_num, ctx, ctx.pid(), count);
+                let verified = check(id, ctx, ctx.pid(), count);
                 
                 if verified {
-                    // Indicate UL that the condition i for process pid has been satisfied
+                    // Indicate UL that the condition id for process pid has been satisfied
                     unsafe {
-                        match RING_BUFFER.output(&RingData { pid:  ctx.pid(), condition: i }, 0) {
+                        match RING_BUFFER.output(&RingData { pid:  ctx.pid(), condition: id }, 0) {
                             Ok(_) => (),
                             Err(e) => {
                                 info!(ctx, "Error: {}", e);

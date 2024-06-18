@@ -3,7 +3,7 @@ use aya::programs::KProbe;
 use aya::{include_bytes_aligned, Ebpf};
 use aya_log::EbpfLogger;
 use log::{info, warn, debug};
-use thesis_code_common::{get_based_graph, CheckTypes, ConditionTypes, CONDITION_NUM};
+use thesis_code_common::{get_based_graph, ConditionTypes, CONDITION_NUM};
 use thesis_code_common::{ConditionStates, NodeCondition, RingData};
 use tokio::signal;
 
@@ -83,32 +83,24 @@ async fn main() -> Result<(), anyhow::Error> {
 
     condition_graph.set(0, &NodeCondition {
                                 node_type: ConditionTypes::PRIMARY,
-                                condition_type: CheckTypes::COUNT,
-                                check_num: 0,
                                 children: &[1],
                                 parents: &[],
                                 kfunction: "ksys_msgget".to_32bytes()
                             }, 0)?;
     condition_graph.set(1, &NodeCondition {
                                 node_type: ConditionTypes::SECONDARY,
-                                condition_type: CheckTypes::COUNT,
-                                check_num: 1,
                                 children: &[2],
                                 parents: &[0],
                                 kfunction: "do_msgsnd".to_32bytes()
                             }, 0)?;
     condition_graph.set(2, &NodeCondition {
                                 node_type: ConditionTypes::SECONDARY,
-                                condition_type: CheckTypes::COUNT,
-                                check_num: 2,
                                 children: &[3],
                                 parents: &[1],
                                 kfunction: "do_msgrcv".to_32bytes()
                             }, 0)?;
     condition_graph.set(3, &NodeCondition {
                                 node_type: ConditionTypes::TRIGGER,
-                                condition_type: CheckTypes::PID,
-                                check_num: 0,
                                 children: &[],
                                 parents: &[2],
                                 kfunction: "try_to_wake_up".to_32bytes()
